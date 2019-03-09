@@ -1,0 +1,89 @@
+{
+  "version": "1.0.0",
+  "name": "Dauchez konnector",
+  "type": "konnector",
+  "language": "node",
+  "icon": "icon.png",
+  "slug": "dauchez",
+  "source": "git://github.com/konnectors/dauchez.git",
+  "editor": "dohseven",
+  "vendor_link": "https://extranet.dauchez.fr",
+  "categories": ["other"],
+  "fields": {
+    "login": {
+      "type": "text"
+    },
+    "password": {
+      "type": "password"
+    },
+    "advancedFields": {
+      "folderPath": {
+        "advanced": true,
+        "isRequired": false
+      }
+    }
+  },
+  "data_types": [
+    "bill"
+  ],
+  "screenshots": [],
+  "permissions": {
+    "bank operations": {
+      "type": "io.cozy.bank.operations"
+    },
+    "bills": {
+      "type": "io.cozy.bills"
+    },
+    "files": {
+      "type": "io.cozy.files"
+    },
+    "accounts": {
+      "type": "io.cozy.accounts",
+      "verbs": ["GET"]
+    }
+  },
+  "developer": {
+    "name": "dohseven"
+  },
+  "langs": ["fr", "en"],
+  "locales": {
+    "fr": {
+      "short_description": "Récupère les quittances de loyer",
+      "long_description": "Récupère les quittances de loyer sur l'extranet Dauchez",
+      "permissions": {
+        "bank operations": {
+          "description": "Utilisé pour relier les factures à des operations bancaires"
+        },
+        "bills": {
+          "description": "Utilisé pour sauver les données des factures"
+        },
+        "files": {
+          "description": "Utilisé pour sauvegarder les factures"
+        },
+        "accounts": {
+          "description": "Utilisé pour obtenir les données du compte"
+        }
+      }
+    },
+    "en": {
+      "short_description": "Fetch the rent bills",
+      "long_description": "Fetch the rent bills from the Dauchez extranet",
+      "permissions": {
+        "bank operations": {
+          "description": "Required to link bank operations to bills"
+        },
+        "bills": {
+          "description": "Required to save the bills data"
+        },
+        "files": {
+          "description": "Required to save the bills"
+        },
+        "accounts": {
+          "description": "Required to get the account's data"
+        }
+      }
+    }
+  },
+  "banksTransactionRegExp": "\\bdauchez\\b",
+  "manifest_version": "2"
+}
