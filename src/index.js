@@ -172,7 +172,11 @@ async function parseDocuments(docList) {
   let finalDocs = []
   for (let doc of docs) {
     if (doc.fileUrl) {
-      const filename = `${utils.formatDate(doc.date)}_${VENDOR}_${doc.amount.toFixed(2)}€${doc.vendorRef ? '_' + doc.vendorRef : ''}.pdf`
+      const filename = `${utils.formatDate(
+        doc.date
+      )}_${VENDOR}_${doc.amount.toFixed(2)}€${
+        doc.vendorRef ? '_' + doc.vendorRef : ''
+      }.pdf`
       const filestream = await request(`${baseUrl}${doc.fileUrl}`, {
         cheerio: false,
         json: false
