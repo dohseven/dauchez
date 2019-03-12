@@ -32,7 +32,7 @@ module.exports = new BaseKonnector(start)
 // the account information come from ./konnector-dev-config.json file
 async function start(fields) {
   log('info', 'Authenticating ...')
-  await authenticate(fields.username, fields.password)
+  await authenticate(fields.login, fields.password)
   log('info', 'Successfully logged in')
   log('info', 'Fetching the list of documents')
   const docList = await getDocumentsList()
@@ -49,7 +49,7 @@ async function start(fields) {
 
 // HTML form uses a JS wrapper, meaning that signin function cannot be used.
 // Use a simple POST request instead.
-async function authenticate(username, password) {
+async function authenticate(login, password) {
   const loginResult = await request(`${baseUrl}/Login`, {
     method: 'POST',
     headers: {
@@ -57,7 +57,7 @@ async function authenticate(username, password) {
       'X-Requested-With': 'XMLHttpRequest'
     },
     form: {
-      identifiant: username,
+      identifiant: login,
       pwd: password,
       'g-recaptcha-response': '',
       hid_css: '',
