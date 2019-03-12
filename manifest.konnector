@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "name": "Dauchez konnector",
+  "name": "Dauchez",
   "type": "konnector",
   "language": "node",
   "icon": "icon.png",
