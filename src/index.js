@@ -11,11 +11,10 @@ const request = requestFactory({
   // The debug mode shows all the details about HTTP requests and responses. Very useful for
   // debugging but very verbose. This is why it is set to false by default
   debug: false,
-  // Activates [cheerio](https://cheerio.js.org/) parsing on each page
-  cheerio: true,
-  // If cheerio is activated do not forget to deactivate json parsing (which is activated by
-  // default in cozy-konnector-libs)
-  json: false,
+  // Desactivate [cheerio](https://cheerio.js.org/) parsing on each page
+  cheerio: false,
+  // Activate JSON parsing
+  json: true,
   // This allows request-promise to keep cookies between requests
   jar: true
 })
@@ -51,94 +50,100 @@ async function start(fields) {
 // HTML form uses a JS wrapper, meaning that signin function cannot be used.
 // Use a simple POST request instead.
 async function authenticate(login, password) {
-  const loginResult = await request(`${baseUrl}/Login`, {
-    method: 'POST',
-    headers: {
-      // Why do we need this header? No idea ¯\_(ツ)_/¯, but it doesn't work without it
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    form: {
-      identifiant: login,
-      pwd: password,
-      'g-recaptcha-response': '',
-      hid_css: '',
-      isIframe: 0
-    },
-    json: true,
-    // Activate full response to get status code
-    resolveWithFullResponse: true
-  })
+  try {
+    const loginResult = await request(`${baseUrl}/Login`, {
+      method: 'POST',
+      headers: {
+        // Why do we need this header? No idea ¯\_(ツ)_/¯, but it doesn't work without it
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      form: {
+        identifiant: login,
+        pwd: password,
+        'g-recaptcha-response': '',
+        hid_css: '',
+        isIframe: 0
+      }
+    })
 
-  // First, check if status code is correct
-  if (loginResult.statusCode != 200) {
-    log('error', 'Failed to login, status code = ' + loginResult.statusCode)
+    // Check the response
+    if (loginResult.response === true && loginResult.flag_login === true) {
+      // Follow redirection if any is present
+      if (loginResult.redirect) {
+        await request(`${baseUrl}${loginResult.redirect}`)
+      }
+      return true
+    }
+
+    log('error', 'Failed to login, response: "' + loginResult.message + '"')
+    throw new Error(errors.LOGIN_FAILED)
+  } catch (err) {
+    log('error', 'Failed to login, error: ' + err.message)
     throw new Error(errors.LOGIN_FAILED)
   }
-
-  // Then check the response
-  const jsonResponse = loginResult.body._root.children[0]
-  if (jsonResponse.response === true && jsonResponse.flag_login === true) {
-    // Follow redirection if any is present
-    if (jsonResponse.redirect) {
-      await request(`${baseUrl}${jsonResponse.redirect}`)
-    }
-    return true
-  }
-
-  log('error', 'Failed to login, response: "' + jsonResponse.message + '"')
-  throw new Error(errors.LOGIN_FAILED)
 }
 
 async function getDocumentsList() {
   // First get the account page
-  await request(`${baseUrl}/Extranet/Compte`)
+  try {
+    await request(`${baseUrl}/Extranet/Compte`)
+  } catch (err) {
+    log('error', 'Failed to retrieve account page, error: ' + err.message)
+    throw new Error(errors.VENDOR_DOWN)
+  }
   // Then get the situation
-  await request(`${baseUrl}/Extranet/Compte/situation`)
+  try {
+    await request(`${baseUrl}/Extranet/Compte/situation`)
+  } catch (err) {
+    log('error', 'Failed to retrieve situation page, error: ' + err.message)
+    throw new Error(errors.VENDOR_DOWN)
+  }
   // Then load the "encart" (whatever it is)
-  await request(`${baseUrl}/Encart/load`, {
-    method: 'POST',
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest'
-    }
-  })
+  try {
+    await request(`${baseUrl}/Encart/load`, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+  } catch (err) {
+    log('error', 'Failed to load encart page, error: ' + err.message)
+    throw new Error(errors.VENDOR_DOWN)
+  }
   // And finally we can get the list of operations (only the rent bills)
-  const docList = await request(`${baseUrl}/Extranet/Compte/listSituation`, {
-    method: 'POST',
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    form: {
-      sortCompte: '',
-      titleCompte: 'Situation',
-      limitCompte: 0,
-      nom: '',
-      debit: 1,
-      id_libelle_code_collectif: 22,
-      montant_min: '',
-      montant_max: '',
-      date_debut: '',
-      date_fin: '',
-      'id_type_collectif[]': 7
-    },
-    json: true,
-    // Activate full response to get status code
-    resolveWithFullResponse: true
-  })
-  if (docList.statusCode != 200) {
-    log('error', 'Failed to get documents, status code = ' + docList.statusCode)
-    throw new Error(errors.NOT_EXISTING_DIRECTORY)
+  try {
+    const docList = await request(`${baseUrl}/Extranet/Compte/listSituation`, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      form: {
+        sortCompte: '',
+        titleCompte: 'Situation',
+        limitCompte: 0,
+        nom: '',
+        debit: 1,
+        id_libelle_code_collectif: 22,
+        montant_min: '',
+        montant_max: '',
+        date_debut: '',
+        date_fin: '',
+        'id_type_collectif[]': 7
+      }
+    })
+    if (docList.response != true) {
+      log(
+        'error',
+        'Failed to get documents, message: "' + docList.message + '"'
+      )
+      throw new Error(errors.NOT_EXISTING_DIRECTORY)
+    }
+    // The content is HTML, convert it to a cheerio object
+    return cheerio.load(docList.returnArray.contenu)
+  } catch (err) {
+    log('error', 'Failed to retrieve list of operations, error: ' + err.message)
+    throw new Error(errors.VENDOR_DOWN)
   }
-  if (docList.body._root.children[0].response != true) {
-    log(
-      'error',
-      'Failed to get documents, message: "' +
-        docList.body._root.children[0].message +
-        '"'
-    )
-    throw new Error(errors.NOT_EXISTING_DIRECTORY)
-  }
-  // The content is HTML, convert it to a cheerio object
-  return cheerio.load(docList.body._root.children[0].returnArray.contenu)
 }
 
 // The goal of this function is to parse a HTML page wrapped by a cheerio instance
