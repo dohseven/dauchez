@@ -1,13 +1,13 @@
 {
-  "name": "cozy-konnector-template",
+  "name": "dauchez-konnector",
   "version": "1.0.0",
   "description": "",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/konnectors/cozy-konnector-template.git"
+    "url": "git+https://github.com/dohseven/dauchez.git"
   },
   "keywords": [],
-  "author": "Cozy Cloud",
+  "author": "dohseven",
   "license": "AGPL-3.0",
   "main": "./src/index.js",
   "eslintConfig": {
