@@ -12,9 +12,7 @@ const readManifest = () =>
 const svgo = new SvgoInstance({
   plugins: [
     {
-      inlineStyles: {
-        onlyMatchedOnce: false
-      }
+      inlineStyles: { onlyMatchedOnce: false }
     }
   ]
 })
